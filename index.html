@@ -1,1 +1,483 @@
-ciao
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Buon Compleanno - 49 - Maria Rita</title>
+<style>
+  :root {
+    --red: #c1121f;
+    --red-deep: #8f0d17;
+    --white: #fffaf0;
+    --orange: #f77f00;
+    --yellow: #fcbf49;
+    --cross: #e0212b;
+    --anim: 1100ms;
+  }
+  * { box-sizing: border-box; }
+  html, body { min-height: 100%; margin: 0; }
+  body {
+    background:
+      radial-gradient(ellipse at 50% 18%, #e0242f 0%, transparent 62%),
+      var(--red);
+    display: grid;
+    place-items: start center;
+    font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+    padding: 64px 16px 32px;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* festone in alto */
+  .bunting {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 48px;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 1.5%;
+    pointer-events: none;
+  }
+  .bunting::before {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: 4px;
+    background: var(--white);
+  }
+  .bunting span {
+    width: calc(100% / 16 - 6px);
+    height: 100%;
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+  }
+
+  main { width: 100%; display: grid; justify-items: center; }
+
+  .hero { text-align: center; margin-bottom: 22px; }
+  .greeting {
+    margin: 0;
+    font-family: Georgia, "Times New Roman", serif;
+    font-style: italic;
+    font-size: clamp(1.2rem, 4.2vw, 1.9rem);
+    color: var(--white);
+  }
+  .who {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(12px, 3vw, 22px);
+    flex-wrap: wrap;
+    margin: 4px 0 8px;
+  }
+  .festeggiata {
+    margin: 0;
+    font-family: Georgia, "Times New Roman", serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: clamp(2.5rem, 11vw, 5.2rem);
+    line-height: 1;
+    color: var(--yellow);
+    text-shadow: 0 3px 0 var(--red-deep), 0 8px 18px rgba(0,0,0,.35);
+  }
+  .age {
+    display: grid;
+    place-items: center;
+    width: clamp(64px, 17vw, 104px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--orange);
+    border: 5px solid var(--white);
+    box-shadow: 0 6px 16px rgba(0,0,0,.35);
+    color: var(--white);
+    transform: rotate(-8deg);
+    line-height: .9;
+  }
+  .age b {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(1.9rem, 7vw, 3.3rem);
+  }
+  .age small { font-size: clamp(.65rem, 2vw, .9rem); font-weight: 600; margin-top: -4px; }
+  .slogan {
+    margin: 0;
+    font-size: clamp(1rem, 3.2vw, 1.3rem);
+    color: var(--white);
+    font-weight: 600;
+  }
+
+  .board {
+    width: min(92vw, 62vh, 540px);
+    aspect-ratio: 1;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    border: 7px solid var(--yellow);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 18px 44px rgba(0,0,0,.4);
+  }
+  .cell {
+    position: relative;
+    display: grid;
+    place-items: center;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    perspective: 500px;
+  }
+  .cell.l { background: var(--white);  color: var(--red); }
+  .cell.d { background: var(--orange); color: var(--white); }
+
+  button.cell { cursor: pointer; }
+  button.cell:hover:not(:disabled) { filter: brightness(1.07); }
+  button.cell:focus-visible { outline: 4px solid var(--red-deep); outline-offset: -4px; z-index: 1; }
+  button.cell:disabled { cursor: default; }
+
+  .num {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(1.7rem, 9vw, 3.3rem);
+    font-weight: 700;
+    line-height: 1;
+    display: block;
+    transform-style: preserve-3d;
+  }
+
+
+  /* il numero ruota su se stesso e si ferma */
+  .cell.spin .num { animation: spin var(--anim) cubic-bezier(.25,.8,.25,1) both; }
+  @keyframes spin {
+    0%   { transform: rotateY(0) scale(1); }
+    45%  { transform: rotateY(540deg) scale(1.55); }
+    100% { transform: rotateY(1080deg) scale(1); }
+  }
+
+  /* casella già scelta: X rossa */
+  .cell.done .num { opacity: .3; }
+  .cell.done::before,
+  .cell.done::after {
+    content: "";
+    position: absolute;
+    left: 14%; right: 14%;
+    top: 50%;
+    height: 7%;
+    margin-top: -3.5%;
+    background: var(--cross);
+    border-radius: 99px;
+    box-shadow: 0 0 0 2px rgba(255,255,255,.95), 0 2px 6px rgba(0,0,0,.35);
+  }
+  .cell.done::before { transform: rotate(45deg); }
+  .cell.done::after  { transform: rotate(-45deg); }
+  .cell.fresh::before { animation: draw-a .35s ease-out both; }
+  .cell.fresh::after  { animation: draw-b .35s .12s ease-out both; }
+  @keyframes draw-a { from { transform: rotate(45deg) scaleX(0); }  to { transform: rotate(45deg) scaleX(1); } }
+  @keyframes draw-b { from { transform: rotate(-45deg) scaleX(0); } to { transform: rotate(-45deg) scaleX(1); } }
+
+  #notice {
+    position: fixed;
+    inset: 0;
+    display: none;
+    place-items: center;
+    background: rgba(60, 4, 10, .55);
+    z-index: 70;
+    padding: 20px;
+  }
+  #notice.show { display: grid; }
+  #notice .card {
+    background: var(--white);
+    color: var(--red);
+    border: 6px solid var(--yellow);
+    border-radius: 14px;
+    padding: 26px 28px 22px;
+    text-align: center;
+    max-width: 360px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.45);
+    animation: pop .3s cubic-bezier(.3,1.4,.5,1) both;
+  }
+  #notice p {
+    margin: 0 0 18px;
+    font-family: Georgia, "Times New Roman", serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: clamp(1.4rem, 5vw, 1.9rem);
+    line-height: 1.2;
+  }
+  #notice button {
+    font: inherit;
+    font-weight: 700;
+    color: var(--white);
+    background: var(--orange);
+    border: 0;
+    border-radius: 99px;
+    padding: 10px 28px;
+    cursor: pointer;
+  }
+  #notice button:focus-visible { outline: 3px solid var(--red-deep); outline-offset: 2px; }
+  @keyframes pop { from { transform: scale(.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  .confetti {
+    position: fixed;
+    top: 0; left: 0;
+    width: 10px; height: 14px;
+    pointer-events: none;
+    z-index: 50;
+    will-change: transform, opacity;
+  }
+
+  #toast {
+    position: fixed;
+    left: 50%; bottom: 20px;
+    transform: translateX(-50%);
+    background: var(--red-deep);
+    color: var(--white);
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: .95rem;
+    display: none;
+    z-index: 60;
+  }
+  #toast a { color: var(--yellow); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cell.spin .num, .cell.fresh::before, .cell.fresh::after, #notice .card { animation: none; }
+  }
+</style>
+</head>
+<body>
+<div class="bunting" id="bunting" aria-hidden="true"></div>
+<main>
+  <header class="hero">
+    <p class="greeting">Buon Compleanno</p>
+    <div class="who">
+      <h1 class="festeggiata">Maria Rita</h1>
+      <div class="age" aria-label="49 anni"><b>49</b><small>anni</small></div>
+    </div>
+    <p class="slogan">Scegli un numero e scopri la sorpresa!</p>
+  </header>
+  <div class="board" id="board" role="group" aria-label="Scacchiera con 16 caselle numerate"></div>
+</main>
+<div id="toast" role="status"></div>
+<div id="notice" role="alertdialog" aria-modal="true" aria-label="Avviso">
+  <div class="card">
+    <p>Ritenta, sarai più fortunata!</p>
+    <button type="button" id="notice-ok">Ok</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  // ---- MODALITÀ PLAYER -------------------------------------------------
+  // La stessa pagina, aperta con ?v=ID_VIDEO, mostra solo il player a tutto schermo.
+  const qs = new URLSearchParams(location.search);
+  const PLAY_ID = qs.get("v");
+  if (PLAY_ID && /^[\w-]{11}$/.test(PLAY_ID)) {
+    document.title = "Video";
+    document.documentElement.style.background = "#000";
+    document.body.style.cssText = "margin:0;padding:0;display:block;background:#000;height:100vh;overflow:hidden";
+    document.body.innerHTML = "";
+    let started = false;
+    const start = () => {
+      if (started) return;
+      started = true;
+      const f = document.createElement("iframe");
+      f.src = "https://www.youtube.com/embed/" + PLAY_ID + "?autoplay=1&controls=1&fs=1&rel=0&playsinline=1";
+      f.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
+      f.allowFullscreen = true;
+      f.style.cssText = "border:0;width:100vw;height:100vh;display:block";
+      document.body.appendChild(f);
+    };
+    if (qs.has("wait") && window.opener) {
+      // aspetta che la scacchiera finisca l'animazione, poi parte il video
+      window.addEventListener("message", (e) => {
+        if (e.origin === location.origin && e.data === "play") start();
+      });
+      try { window.opener.postMessage("ready", location.origin); } catch (e) {}
+      setTimeout(start, 6000);   // sicurezza: parte comunque
+    } else {
+      start();
+    }
+    return;
+  }
+
+  // ---- CONFIGURAZIONE -------------------------------------------------
+  // Un link per casella, nell'ordine 1..13.
+  // ATTENZIONE: le caselle 10-13 hanno al momento lo stesso video: sostituisci gli ID.
+  const VIDEOS = [
+    "https://youtube.com/shorts/eYMf9ETfLmA",
+    "https://youtube.com/shorts/mK-IQ3PV-A0",
+    "https://youtube.com/shorts/YU-GEp0VC5g",
+    "https://youtube.com/shorts/kw6jEJvzMjI",
+    "https://youtube.com/shorts/xf56bxdn2yA",
+    "https://youtube.com/shorts/sAnFPu7ieKw",
+    "https://youtube.com/shorts/S1tgPta7l68",
+    "https://youtube.com/shorts/4KMn-atsvYk",
+    "https://youtube.com/shorts/KrArW_kgd1g",
+    "https://youtube.com/shorts/mJKN0ERCCOE",
+    "https://youtube.com/shorts/mJKN0ERCCOE",
+    "https://youtube.com/shorts/mJKN0ERCCOE",
+    "https://youtube.com/shorts/mJKN0ERCCOE"
+  ];
+  const NO_PRIZE = [4, 9, 14];        // numeri delle 3 caselle senza video, nascoste tra le altre (1-16)
+  const ALLOW_REPLAY = false;         // true = una casella già scelta si può riaprire
+  const STORAGE_KEY = "scacchiera-scelte";
+  const ANIM_MS = 1100;               // deve coincidere con --anim nel CSS
+  // ---------------------------------------------------------------------
+
+  const TOTAL = VIDEOS.length + NO_PRIZE.length;   // 16 caselle
+  const LINKS = [];
+  { let v = 0; for (let n = 1; n <= TOTAL; n++) LINKS.push(NO_PRIZE.includes(n) ? null : VIDEOS[v++]); }
+
+  const board = document.getElementById("board");
+  const toast = document.getElementById("toast");
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const COLORS = ["#fcbf49", "#fffaf0", "#f77f00", "#ffd98a"];
+
+  // festone
+  const bunting = document.getElementById("bunting");
+  const flagColors = ["#fcbf49", "#fffaf0", "#f77f00"];
+  for (let i = 0; i < 16; i++) {
+    const s = document.createElement("span");
+    s.style.background = flagColors[i % 3];
+    bunting.appendChild(s);
+  }
+
+  let chosen = new Set();
+  let busy = false;
+
+  try {
+    if (location.hash === "#reset") localStorage.removeItem(STORAGE_KEY);
+    chosen = new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"));
+  } catch (e) { /* storage non disponibile: le X valgono solo per questa sessione */ }
+
+  function save() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify([...chosen])); } catch (e) {}
+  }
+
+  // coriandoli: dall'alto all'apertura, dalla casella ad ogni scelta
+  function confetti(x, y, n, spread) {
+    if (reduceMotion || !document.body.animate) return;
+    for (let i = 0; i < n; i++) {
+      const p = document.createElement("span");
+      p.className = "confetti";
+      p.style.background = COLORS[i % COLORS.length];
+      if (i % 3 === 0) p.style.borderRadius = "50%";
+      document.body.appendChild(p);
+      const dx = (Math.random() - 0.5) * spread;
+      const fall = innerHeight * (0.5 + Math.random() * 0.6);
+      const rot = (Math.random() - 0.5) * 900;
+      const a = p.animate([
+        { transform: `translate(${x}px, ${y}px) rotate(0deg)`, opacity: 1 },
+        { transform: `translate(${x + dx}px, ${y + fall}px) rotate(${rot}deg)`, opacity: 0 }
+      ], { duration: 1800 + Math.random() * 1400, delay: Math.random() * 300, easing: "cubic-bezier(.2,.6,.4,1)", fill: "both" });
+      a.onfinish = () => p.remove();
+    }
+  }
+
+  function ytId(u) {
+    const m = u.match(/(?:shorts\/|v=|youtu\.be\/)([\w-]{11})/);
+    return m ? m[1] : null;
+  }
+
+  function openPopup(id) {
+    // Finestra di dimensioni normali, centrata e in formato verticale (gli Shorts sono 9:16),
+    // così il player e i suoi comandi restano interamente visibili.
+    const h = Math.min(screen.availHeight - 80, 820);
+    const w = Math.min(screen.availWidth - 40, Math.round(h * 9 / 16) + 20);
+    const left = Math.round((screen.availWidth - w) / 2);
+    const top = Math.round((screen.availHeight - h) / 2);
+    // Va aperto subito, nel click: dopo l'animazione il browser lo bloccherebbe.
+    // Apre questa stessa pagina in modalità player, che resta nera finché non riceve "play".
+    const u = location.pathname + "?v=" + id + "&wait=1";
+    return window.open(u, "_blank", `popup=yes,width=${w},height=${h},left=${left},top=${top}`);
+  }
+
+  function showToast(url) {
+    toast.innerHTML = 'Popup bloccato. <a href="' + url + '" target="_blank" rel="noopener">Apri il video</a>';
+    toast.style.display = "block";
+    setTimeout(() => { toast.style.display = "none"; }, 8000);
+  }
+
+  const notice = document.getElementById("notice");
+  const noticeOk = document.getElementById("notice-ok");
+  let noticeTimer;
+  function showNotice() {
+    notice.classList.add("show");
+    noticeOk.focus();
+    clearTimeout(noticeTimer);
+    noticeTimer = setTimeout(hideNotice, 5000);
+  }
+  function hideNotice() { notice.classList.remove("show"); }
+  noticeOk.addEventListener("click", hideNotice);
+  notice.addEventListener("click", (e) => { if (e.target === notice) hideNotice(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") hideNotice(); });
+
+  function pick(i, cell) {
+    if (busy) return;
+    if (chosen.has(i) && !ALLOW_REPLAY) return;
+    busy = true;
+
+    const url = LINKS[i];            // null = casella senza video
+    const id = url ? ytId(url) : null;
+    const win = id ? openPopup(id) : null;
+    const replay = chosen.has(i);
+
+    // il popup carica la pagina player e risponde "ready"; a fine animazione gli mandiamo "play"
+    let ready = false, animDone = false;
+    const trySend = () => {
+      if (win && ready && animDone) {
+        try { win.postMessage("play", location.origin); } catch (e) {}
+        window.removeEventListener("message", onMsg);
+      }
+    };
+    const onMsg = (e) => {
+      if (e.source === win && e.origin === location.origin && e.data === "ready") { ready = true; trySend(); }
+    };
+    if (win) window.addEventListener("message", onMsg);
+
+    const finish = () => {
+      cell.classList.remove("spin");
+      cell.classList.add("done", "fresh");
+      if (!replay) { chosen.add(i); save(); }
+      if (!ALLOW_REPLAY) cell.disabled = true;
+      if (url) {
+        const r = cell.getBoundingClientRect();
+        confetti(r.left + r.width / 2, r.top + r.height / 2, 28, 320);
+        if (win) { animDone = true; trySend(); } else showToast(url);
+      } else {
+        showNotice();
+      }
+      busy = false;
+    };
+
+    if (reduceMotion) { finish(); return; }
+    cell.classList.remove("fresh");
+    cell.classList.add("spin");
+    setTimeout(finish, ANIM_MS);
+  }
+
+  for (let idx = 0; idx < TOTAL; idx++) {
+    const row = Math.floor(idx / 4), col = idx % 4;
+    const tone = (row + col) % 2 === 0 ? "l" : "d";
+
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "cell " + tone;
+    b.setAttribute("aria-label", "Casella " + (idx + 1));
+    b.innerHTML = '<span class="num">' + (idx + 1) + "</span>";
+    if (chosen.has(idx)) {
+      b.classList.add("done");
+      if (!ALLOW_REPLAY) b.disabled = true;
+    }
+    b.addEventListener("click", () => pick(idx, b));
+    board.appendChild(b);
+  }
+
+  // un solo lancio di coriandoli all'apertura della pagina
+  window.addEventListener("load", () => {
+    for (let k = 0; k < 4; k++) {
+      confetti(innerWidth * (0.1 + k * 0.27), -20, 14, 160);
+    }
+  });
+})();
+</script>
+</body>
+</html>
