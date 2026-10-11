@@ -285,15 +285,35 @@
       f.style.cssText = "border:0;width:100vw;height:100vh;display:block";
       document.body.appendChild(f);
     };
+    let shown = false;
+    const showButton = () => {
+      if (shown || started) return;
+      shown = true;
+      const wrap = document.createElement("div");
+      wrap.style.cssText = "position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:#000;font-family:system-ui,sans-serif";
+      const b = document.createElement("button");
+      b.type = "button";
+      b.setAttribute("aria-label", "Riproduci il video");
+      b.style.cssText = "width:112px;height:112px;border-radius:50%;border:6px solid #fffaf0;background:#e0212b;cursor:pointer;display:grid;place-items:center;padding:0;box-shadow:0 8px 24px rgba(0,0,0,.5)";
+      b.innerHTML = '<svg width="52" height="52" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="#fffaf0"/></svg>';
+      const t = document.createElement("div");
+      t.textContent = "Tocca per guardare";
+      t.style.cssText = "color:#fffaf0;font-size:1.1rem;font-weight:600";
+      wrap.appendChild(b);
+      wrap.appendChild(t);
+      document.body.appendChild(wrap);
+      b.focus();
+      b.addEventListener("click", () => { wrap.remove(); start(); });  // dentro il click: l'avvio con audio è permesso
+    };
     if (qs.has("wait") && window.opener) {
       // aspetta che la scacchiera finisca l'animazione, poi parte il video
       window.addEventListener("message", (e) => {
-        if (e.origin === location.origin && e.data === "play") start();
+        if (e.origin === location.origin && e.data === "play") showButton();
       });
       try { window.opener.postMessage("ready", location.origin); } catch (e) {}
-      setTimeout(start, 6000);   // sicurezza: parte comunque
+      setTimeout(showButton, 6000);   // sicurezza: il pulsante compare comunque
     } else {
-      start();
+      showButton();
     }
     return;
   }
