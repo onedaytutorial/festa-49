@@ -279,7 +279,7 @@
       if (started) return;
       started = true;
       const f = document.createElement("iframe");
-      f.src = "https://www.youtube.com/embed/" + PLAY_ID + "?autoplay=1&rel=0&playsinline=1";
+      f.src = "https://www.youtube.com/embed/" + PLAY_ID + "?autoplay=1&controls=1&fs=1&rel=0&playsinline=1";
       f.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
       f.allowFullscreen = true;
       f.style.cssText = "border:0;width:100vw;height:100vh;display:block";
@@ -378,13 +378,16 @@
   }
 
   function openPopup(id) {
-    const w = screen.availWidth, h = screen.availHeight;
+    // Finestra di dimensioni normali, centrata e in formato verticale (gli Shorts sono 9:16),
+    // così il player e i suoi comandi restano interamente visibili.
+    const h = Math.min(screen.availHeight - 80, 820);
+    const w = Math.min(screen.availWidth - 40, Math.round(h * 9 / 16) + 20);
+    const left = Math.round((screen.availWidth - w) / 2);
+    const top = Math.round((screen.availHeight - h) / 2);
     // Va aperto subito, nel click: dopo l'animazione il browser lo bloccherebbe.
     // Apre questa stessa pagina in modalità player, che resta nera finché non riceve "play".
     const u = location.pathname + "?v=" + id + "&wait=1";
-    const win = window.open(u, "_blank", `popup=yes,left=0,top=0,width=${w},height=${h}`);
-    if (win) { try { win.moveTo(0, 0); win.resizeTo(w, h); } catch (e) {} }
-    return win;
+    return window.open(u, "_blank", `popup=yes,width=${w},height=${h},left=${left},top=${top}`);
   }
 
   function showToast(url) {
