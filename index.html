@@ -214,6 +214,13 @@
   #notice button:focus-visible { outline: 3px solid var(--red-deep); outline-offset: 2px; }
   @keyframes pop { from { transform: scale(.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
+  .ver {
+    margin: 14px 0 0;
+    text-align: center;
+    font-size: .78rem;
+    color: rgba(255, 250, 240, .8);
+  }
+
   .confetti {
     position: fixed;
     top: 0; left: 0;
@@ -254,6 +261,7 @@
     <p class="slogan">Scegli un numero e scopri la sorpresa!</p>
   </header>
   <div class="board" id="board" role="group" aria-label="Scacchiera con 16 caselle numerate"></div>
+  <p class="ver" id="ver"></p>
 </main>
 <div id="toast" role="status"></div>
 <div id="notice" role="alertdialog" aria-modal="true" aria-label="Avviso">
@@ -339,6 +347,7 @@
   const NO_PRIZE = [4, 9, 14];        // numeri delle 3 caselle senza video, nascoste tra le altre (1-16)
   const ALLOW_REPLAY = false;         // true = una casella già scelta si può riaprire
   const STORAGE_KEY = "scacchiera-scelte";
+  const VERSION = "v1 · 11/10/2026";   // da cambiare ad ogni aggiornamento del file
   const ANIM_MS = 1100;               // deve coincidere con --anim nel CSS
   // ---------------------------------------------------------------------
 
@@ -347,6 +356,7 @@
   { let v = 0; for (let n = 1; n <= TOTAL; n++) LINKS.push(NO_PRIZE.includes(n) ? null : VIDEOS[v++]); }
 
   const board = document.getElementById("board");
+  document.getElementById("ver").textContent = "Versione " + VERSION;
   const toast = document.getElementById("toast");
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const COLORS = ["#fcbf49", "#fffaf0", "#f77f00", "#ffd98a"];
