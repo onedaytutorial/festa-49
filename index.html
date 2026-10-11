@@ -105,10 +105,10 @@
   }
 
   .board {
-    width: min(92vw, 62vh, 540px);
-    aspect-ratio: 1;
+    width: min(94vw, 77vh, 620px);
+    aspect-ratio: 5 / 4;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     grid-template-rows: repeat(4, 1fr);
     border: 7px solid var(--yellow);
     border-radius: 10px;
@@ -135,7 +135,7 @@
 
   .num {
     font-family: Georgia, "Times New Roman", serif;
-    font-size: clamp(1.7rem, 9vw, 3.3rem);
+    font-size: clamp(1.5rem, 7.5vw, 3.1rem);
     font-weight: 700;
     line-height: 1;
     display: block;
@@ -221,6 +221,40 @@
     color: rgba(255, 250, 240, .8);
   }
 
+  .peek {
+    position: fixed;
+    right: 12px; bottom: 12px;
+    z-index: 40;
+    width: 40px; height: 40px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 250, 240, .75);
+    background: rgba(20, 8, 10, .45);
+    color: var(--white);
+    cursor: pointer;
+    opacity: .6;
+  }
+  .peek:hover, .peek[aria-pressed="true"] { opacity: 1; }
+  .peek[aria-pressed="true"] { background: var(--orange); }
+  .peek:focus-visible { outline: 3px solid var(--white); outline-offset: 2px; }
+
+  .hint {
+    position: absolute;
+    left: 4px; right: 4px; bottom: 4px;
+    z-index: 2;
+    display: none;
+    padding: 2px 4px;
+    border-radius: 4px;
+    background: rgba(20, 8, 10, .82);
+    color: #fff;
+    font: 700 clamp(.58rem, 1.9vw, .78rem)/1.25 system-ui, sans-serif;
+    text-align: center;
+    pointer-events: none;
+  }
+  body.peek-on .hint { display: block; }
+
   .confetti {
     position: fixed;
     top: 0; left: 0;
@@ -260,13 +294,13 @@
     </div>
     <p class="slogan">Scegli un numero e scopri la sorpresa!</p>
   </header>
-  <div class="board" id="board" role="group" aria-label="Scacchiera con 16 caselle numerate"></div>
+  <div class="board" id="board" role="group" aria-label="Scacchiera con 20 caselle numerate"></div>
   <p class="ver" id="ver"></p>
 </main>
 <div id="toast" role="status"></div>
 <div id="notice" role="alertdialog" aria-modal="true" aria-label="Avviso">
   <div class="card">
-    <p>Ritenta, sarai più fortunata!</p>
+    <p id="notice-text">Ritenta, sarai più fortunata!</p>
     <button type="button" id="notice-ok">Ok</button>
   </div>
 </div>
@@ -328,7 +362,6 @@
 
   // ---- CONFIGURAZIONE -------------------------------------------------
   // Un link per casella, nell'ordine 1..13.
-  // ATTENZIONE: le caselle 10-13 hanno al momento lo stesso video: sostituisci gli ID.
   const VIDEOS = [
     "https://youtube.com/shorts/eYMf9ETfLmA",
     "https://youtube.com/shorts/mK-IQ3PV-A0",
@@ -340,20 +373,22 @@
     "https://youtube.com/shorts/4KMn-atsvYk",
     "https://youtube.com/shorts/KrArW_kgd1g",
     "https://youtube.com/shorts/mJKN0ERCCOE",
-    "https://youtube.com/shorts/mJKN0ERCCOE",
-    "https://youtube.com/shorts/mJKN0ERCCOE",
-    "https://youtube.com/shorts/mJKN0ERCCOE"
+    "https://youtu.be/zBz-rlmHi9I",
+    "https://youtube.com/shorts/q2rUajSd90k",
+    "https://youtube.com/shorts/nVKY_nUi4Mk"
   ];
-  const NO_PRIZE = [4, 9, 14];        // numeri delle 3 caselle senza video, nascoste tra le altre (1-16)
+  const NO_PRIZE = [4, 9, 14];        // numeri delle 3 caselle "ritenta" (senza video), nascoste tra le altre (1-20)
+  const PEEK_REQUIRES_HASH = false;   // true = il tasto "occhio" compare solo aprendo la pagina con #svela
+  const GIFTS = [6, 11, 17, 20];      // numeri delle 4 caselle regalo (messaggio "hai vinto un premio")
   const ALLOW_REPLAY = false;         // true = una casella già scelta si può riaprire
   const STORAGE_KEY = "scacchiera-scelte";
-  const VERSION = "v1 · 11/10/2026";   // da cambiare ad ogni aggiornamento del file
+  const VERSION = "v4 YouTube · 11/10/2026";   // da cambiare ad ogni aggiornamento del file
   const ANIM_MS = 1100;               // deve coincidere con --anim nel CSS
   // ---------------------------------------------------------------------
 
-  const TOTAL = VIDEOS.length + NO_PRIZE.length;   // 16 caselle
+  const TOTAL = VIDEOS.length + NO_PRIZE.length + GIFTS.length;   // 20 caselle
   const LINKS = [];
-  { let v = 0; for (let n = 1; n <= TOTAL; n++) LINKS.push(NO_PRIZE.includes(n) ? null : VIDEOS[v++]); }
+  { let v = 0; for (let n = 1; n <= TOTAL; n++) LINKS.push(NO_PRIZE.includes(n) || GIFTS.includes(n) ? null : VIDEOS[v++]); }
 
   const board = document.getElementById("board");
   document.getElementById("ver").textContent = "Versione " + VERSION;
@@ -429,7 +464,8 @@
   const notice = document.getElementById("notice");
   const noticeOk = document.getElementById("notice-ok");
   let noticeTimer;
-  function showNotice() {
+  function showNotice(text) {
+    document.getElementById("notice-text").textContent = text;
     notice.classList.add("show");
     noticeOk.focus();
     clearTimeout(noticeTimer);
@@ -472,8 +508,12 @@
         const r = cell.getBoundingClientRect();
         confetti(r.left + r.width / 2, r.top + r.height / 2, 28, 320);
         if (win) { animDone = true; trySend(); } else showToast(url);
+      } else if (GIFTS.includes(i + 1)) {
+        const r = cell.getBoundingClientRect();
+        confetti(r.left + r.width / 2, r.top + r.height / 2, 60, 520);
+        showNotice("🎁 Complimenti, hai vinto un premio!");
       } else {
-        showNotice();
+        showNotice("Ritenta, sarai più fortunata!");
       }
       busy = false;
     };
@@ -484,21 +524,39 @@
     setTimeout(finish, ANIM_MS);
   }
 
+  let vn = 0;
   for (let idx = 0; idx < TOTAL; idx++) {
-    const row = Math.floor(idx / 4), col = idx % 4;
+    const row = Math.floor(idx / 5), col = idx % 5;
     const tone = (row + col) % 2 === 0 ? "l" : "d";
 
     const b = document.createElement("button");
     b.type = "button";
     b.className = "cell " + tone;
     b.setAttribute("aria-label", "Casella " + (idx + 1));
-    b.innerHTML = '<span class="num">' + (idx + 1) + "</span>";
+    const hint = GIFTS.includes(idx + 1) ? "🎁 regalo" : LINKS[idx] ? "▶ video " + (++vn) : "↻ ritenta";
+    b.innerHTML = '<span class="num">' + (idx + 1) + '</span><span class="hint">' + hint + "</span>";
     if (chosen.has(idx)) {
       b.classList.add("done");
       if (!ALLOW_REPLAY) b.disabled = true;
     }
     b.addEventListener("click", () => pick(idx, b));
     board.appendChild(b);
+  }
+
+  // tasto "occhio": mostra/nasconde il contenuto nascosto di ogni casella
+  if (!PEEK_REQUIRES_HASH || location.hash.includes("svela")) {
+    const pk = document.createElement("button");
+    pk.type = "button";
+    pk.className = "peek";
+    pk.title = "Mostra/nascondi il contenuto delle caselle";
+    pk.setAttribute("aria-label", "Mostra o nascondi il contenuto delle caselle");
+    pk.setAttribute("aria-pressed", "false");
+    pk.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+    pk.addEventListener("click", () => {
+      const on = document.body.classList.toggle("peek-on");
+      pk.setAttribute("aria-pressed", String(on));
+    });
+    document.body.appendChild(pk);
   }
 
   // un solo lancio di coriandoli all'apertura della pagina
