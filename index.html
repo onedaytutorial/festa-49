@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -265,6 +264,40 @@
 </div>
 
 <script>
+(function () {
+  // ---- MODALITÀ PLAYER -------------------------------------------------
+  // La stessa pagina, aperta con ?v=ID_VIDEO, mostra solo il player a tutto schermo.
+  const qs = new URLSearchParams(location.search);
+  const PLAY_ID = qs.get("v");
+  if (PLAY_ID && /^[\w-]{11}$/.test(PLAY_ID)) {
+    document.title = "Video";
+    document.documentElement.style.background = "#000";
+    document.body.style.cssText = "margin:0;padding:0;display:block;background:#000;height:100vh;overflow:hidden";
+    document.body.innerHTML = "";
+    let started = false;
+    const start = () => {
+      if (started) return;
+      started = true;
+      const f = document.createElement("iframe");
+      f.src = "https://www.youtube.com/embed/" + PLAY_ID + "?autoplay=1&rel=0&playsinline=1";
+      f.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
+      f.allowFullscreen = true;
+      f.style.cssText = "border:0;width:100vw;height:100vh;display:block";
+      document.body.appendChild(f);
+    };
+    if (qs.has("wait") && window.opener) {
+      // aspetta che la scacchiera finisca l'animazione, poi parte il video
+      window.addEventListener("message", (e) => {
+        if (e.origin === location.origin && e.data === "play") start();
+      });
+      try { window.opener.postMessage("ready", location.origin); } catch (e) {}
+      setTimeout(start, 6000);   // sicurezza: parte comunque
+    } else {
+      start();
+    }
+    return;
+  }
+
   // ---- CONFIGURAZIONE -------------------------------------------------
   // Un link per casella, nell'ordine 1..13.
   // ATTENZIONE: le caselle 10-13 hanno al momento lo stesso video: sostituisci gli ID.
@@ -339,18 +372,18 @@
     }
   }
 
-  function openPopup() {
+  function ytId(u) {
+    const m = u.match(/(?:shorts\/|v=|youtu\.be\/)([\w-]{11})/);
+    return m ? m[1] : null;
+  }
+
+  function openPopup(id) {
     const w = screen.availWidth, h = screen.availHeight;
     // Va aperto subito, nel click: dopo l'animazione il browser lo bloccherebbe.
-    const win = window.open("about:blank", "_blank",
-      `popup=yes,left=0,top=0,width=${w},height=${h}`);
-    if (win) {
-      try {
-        win.document.write('<body style="margin:0;background:#000"></body>');
-        win.moveTo(0, 0);
-        win.resizeTo(w, h);
-      } catch (e) {}
-    }
+    // Apre questa stessa pagina in modalità player, che resta nera finché non riceve "play".
+    const u = location.pathname + "?v=" + id + "&wait=1";
+    const win = window.open(u, "_blank", `popup=yes,left=0,top=0,width=${w},height=${h}`);
+    if (win) { try { win.moveTo(0, 0); win.resizeTo(w, h); } catch (e) {} }
     return win;
   }
 
@@ -379,9 +412,23 @@
     if (chosen.has(i) && !ALLOW_REPLAY) return;
     busy = true;
 
-    const url = LINKS[i];             // null = casella senza video
-    const win = url ? openPopup() : null;
+    const url = LINKS[i];            // null = casella senza video
+    const id = url ? ytId(url) : null;
+    const win = id ? openPopup(id) : null;
     const replay = chosen.has(i);
+
+    // il popup carica la pagina player e risponde "ready"; a fine animazione gli mandiamo "play"
+    let ready = false, animDone = false;
+    const trySend = () => {
+      if (win && ready && animDone) {
+        try { win.postMessage("play", location.origin); } catch (e) {}
+        window.removeEventListener("message", onMsg);
+      }
+    };
+    const onMsg = (e) => {
+      if (e.source === win && e.origin === location.origin && e.data === "ready") { ready = true; trySend(); }
+    };
+    if (win) window.addEventListener("message", onMsg);
 
     const finish = () => {
       cell.classList.remove("spin");
@@ -391,7 +438,7 @@
       if (url) {
         const r = cell.getBoundingClientRect();
         confetti(r.left + r.width / 2, r.top + r.height / 2, 28, 320);
-        if (win) win.location.href = url; else showToast(url);
+        if (win) { animDone = true; trySend(); } else showToast(url);
       } else {
         showNotice();
       }
@@ -427,6 +474,7 @@
       confetti(innerWidth * (0.1 + k * 0.27), -20, 14, 160);
     }
   });
+})();
 </script>
 </body>
 </html>
